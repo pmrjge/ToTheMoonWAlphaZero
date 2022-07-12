@@ -190,8 +190,8 @@ def train_step(net, optim, data: TrainingExample):
 
 
 def train(
-    game_class="connect_two_game.Connect2Game",
-    agent_class="mlp_policy.MlpPolicyValueNet",
+    game_class="chess_game.ChessGame",
+    agent_class="resnet_policy.ResnetPolicyValueNet256",
     selfplay_batch_size: int = 128,
     training_batch_size: int = 128,
     num_iterations: int = 100,

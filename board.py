@@ -1,3 +1,4 @@
+import functools
 import numpy as np
 import itertools
 import copy
@@ -34,10 +35,10 @@ class Board(pax.Module):
         init_board[6,0:8] = "P"
         init_board[init_board == "0"] = " "
 
-        self.board = jnp.zeros((8,8), dtype=jnp.int32)
+        board = jnp.zeros((8,8), dtype=jnp.int32)
         for i in range(8):
             for j in range(8):
-                self.board = self.board.at[i, j].set(self.mapping[init_board[i,j]])
+                board = board.at[i, j].set(self.mapping[init_board[i,j]])
         self.move_count = 0
         self.no_progress_count = 0
         self.repetitions_w = 0
@@ -50,39 +51,22 @@ class Board(pax.Module):
         self.R1_move_count = 0 # white's queenside rook
         self.R2_move_count = 0 # white's kingside rook
         self.K_move_count = 0
-        self.current_board = self.board
+        self.current_board = board
         self.en_passant_move_copy = None
         self.copy_board = None; self.en_passant_copy = None; self.r1_move_count_copy = None; self.r2_move_count_copy = None; 
         self.k_move_count_copy = None; self.R1_move_count_copy = None; self.R2_move_count_copy = None; self.K_move_count_copy = None
         self.player = 0 
 
-
-    def transform_board(self):
-        board = self.current_board
-
-        board_res = np.zeros((8,8), dtype=np.int32).astype(str)
-        m = self.from_pieces
-
-        for i in range(8):
-            for j in range(8):
-                board_res[i, j] = m(board[i,j])
-
-        return board_res
-
-    def inverse_board(self, cb):
-
-        res = jnp.zeros((8, 8), dtype=jnp.int32)
-
-        for i in range(8):
-            for j in range(8):
-                res[i, j] = self.mapping[cb[i, j]]
-
-        return res
+    def compute_array(self, arr):
+        arr = list(map(lambda i: self.mapping[i], arr))
+        result = jnp.zeros_like(range(13), dtype=jnp.int32)
+        result[arr] = 1
+        return result
     
     def move_rules_P(self,current_position):
         i, j = current_position
         next_positions = []
-        board_state = self.transform_board()
+        board_state = self.board
         ## to calculate allowed moves for king
         threats = []
         if 0<=i-1<=7 and 0<=j+1<=7:
@@ -101,23 +85,24 @@ class Board(pax.Module):
                 next_positions.append((i-1,j-1))
             elif j+1==self.en_passant and abs(self.en_passant_move-self.move_count) == 1:
                 next_positions.append((i-1,j+1))
-        if i in [1,2,3,4,5] and board_state[i-1,j]==" ":
+                {"r": 1, "n": 2, "b": 3, "q": 4, "k": 5, "p": 6, "R": 7, "N": 8, "B": 9, "Q": 10, "K": 11, "P": 12, " ": 0}
+        if i in [1,2,3,4,5] and board_state[i-1,j]==0:
             next_positions.append((i-1,j))          
-        if j==0 and board_state[i-1,j+1] in ["r", "n", "b", "q", "k", "p"]:
+        if j==0 and self.compute_array(["r", "n", "b", "q", "k", "p"])[board_state[i-1,j+1]] == 1:
             next_positions.append((i-1,j+1))
-        elif j==7 and board_state[i-1,j-1] in ["r", "n", "b", "q", "k", "p"]:
+        elif j==7 and self.compute_array(["r", "n", "b", "q", "k", "p"])[board_state[i-1,j-1]] == 1:
             next_positions.append((i-1,j-1))
         elif j in [1,2,3,4,5,6]:
-            if board_state[i-1,j+1] in ["r", "n", "b", "q", "k", "p"]:
+            if self.compute_array(["r", "n", "b", "q", "k", "p"])[board_state[i-1, j+1]] == 1:
                 next_positions.append((i-1,j+1))
-            if board_state[i-1,j-1] in ["r", "n", "b", "q", "k", "p"]:
+            if self.compute_array(["r", "n", "b", "q", "k", "p"])[board_state[i-1, j-1]] == 1:
                 next_positions.append((i-1,j-1))
         return next_positions, threats    
 
     def move_rules_p(self,current_position):
         i, j = current_position
         next_positions = []
-        board_state = self.transform_board()
+        board_state = self.board
         ## to calculate allowed moves for king
         threats = []
         if 0<=i+1<=7 and 0<=j+1<=7:
@@ -138,48 +123,48 @@ class Board(pax.Module):
                 next_positions.append((i+1,j+1))
         if i in [2,3,4,5,6] and board_state[i+1,j]==" ":
             next_positions.append((i+1,j))          
-        if j==0 and board_state[i+1,j+1] in ["R", "N", "B", "Q", "K", "P"]:
+        if j==0 and self.compute_array(["R", "N", "B", "Q", "K", "P"])[board_state[i+1,j+1]] == 1:
             next_positions.append((i+1,j+1))
-        elif j==7 and board_state[i+1,j-1] in ["R", "N", "B", "Q", "K", "P"]:
+        elif j==7 and self.compute_array(["R", "N", "B", "Q", "K", "P"])[board_state[i+1,j-1]] == 1:
             next_positions.append((i+1,j-1))
         elif j in [1,2,3,4,5,6]:
-            if board_state[i+1,j+1] in ["R", "N", "B", "Q", "K", "P"]:
+            if self.compute_array(["R", "N", "B", "Q", "K", "P"])[board_state[i+1,j+1]] == 1:
                 next_positions.append((i+1,j+1))
-            if board_state[i+1,j-1] in ["R", "N", "B", "Q", "K", "P"]:
+            if self.compute_array(["R", "N", "B", "Q", "K", "P"])[board_state[i+1,j-1]] == 1:
                 next_positions.append((i+1,j-1))
         return next_positions, threats
 
     def move_rules_r(self,current_position):
         i, j = current_position
-        board_state = self.transform_board()
+        board_state = self.board
         next_positions = []; a=i
         while a!=0:
-            if board_state[a-1,j]!=" ":
-                if board_state[a-1,j] in ["R", "N", "B", "Q", "K", "P"]:
+            if board_state[a-1,j] > 0:
+                if self.compute_array(["R", "N", "B", "Q", "K", "P"])[board_state[a-1, j]] == 1:
                     next_positions.append((a-1,j))
                 break
             next_positions.append((a-1,j))
             a-=1
         a=i
         while a!=7:
-            if board_state[a+1,j]!=" ":
-                if board_state[a+1,j] in ["R", "N", "B", "Q", "K", "P"]:
+            if board_state[a+1,j] > 0:
+                if self.compute_array(["R", "N", "B", "Q", "K", "P"])[board_state[a+1, j]] == 1:
                     next_positions.append((a+1,j))
                 break
             next_positions.append((a+1,j))
             a+=1
         a=j
         while a!=7:
-            if board_state[i,a+1]!=" ":
-                if board_state[i,a+1] in ["R", "N", "B", "Q", "K", "P"]:
+            if board_state[i,a+1] > 0:
+                if self.compute_array(["R", "N", "B", "Q", "K", "P"])[board_state[i, a+1]] == 1:
                     next_positions.append((i,a+1))
                 break
             next_positions.append((i,a+1))
             a+=1
         a=j
         while a!=0:
-            if board_state[i,a-1]!=" ":
-                if board_state[i,a-1] in ["R", "N", "B", "Q", "K", "P"]:
+            if board_state[i,a-1] > 0:
+                if self.compute_array(["R", "N", "B", "Q", "K", "P"])[board_state[i, a-1]] == 1:
                     next_positions.append((i,a-1))
                 break
             next_positions.append((i,a-1))
@@ -189,7 +174,7 @@ class Board(pax.Module):
 
     def move_rules_R(self,current_position):
         i, j = current_position
-        board_state = self.transform_board()
+        board_state = self.board
         next_positions = []; a=i
         while a!=0:
             if board_state[a-1,j]!=" ":

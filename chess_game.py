@@ -13,20 +13,11 @@ from utils import select_tree
 class ChessGame(Enviroment):
     """Connect-Four game environment"""
 
-    board: chex.Array
-    who_play: chex.Array
-    terminated: chex.Array
-    winner: chex.Array
-    num_cols: int
-    num_rows: int
+    logic: Board
 
-    def __init__(self, num_cols: int = 7, num_rows: int = 6):
+    def __init__(self):
         super().__init__()
         self.logic = Board()
-        self.board = self.logic.current_board
-        self.who_play = jnp.array(self.logic.player, dtype=jnp.int32)
-        self.terminated = jnp.array(0, dtype=jnp.bool_)
-        self.winner = jnp.array(1, dtype=jnp.int32)
 
     def num_actions(self):
         return 4672
@@ -38,15 +29,11 @@ class ChessGame(Enviroment):
             encoded.append(self.logic.encode_action(initial_pos, final_pos, underpromote)[0])
         invalid_moves = jnp.array(list(set(range(4672)).difference(set(encoded))), dtype=jnp.int32)
 
-        result = jnp.zeros((4672), dtype=jnp.int32)
+        result = jnp.zeros((4672,), dtype=jnp.int32)
         return result.at[invalid_moves].set(1)
 
     def reset(self):
         self.logic = Board()
-        self.board = self.logic.current_board
-        self.who_play = jnp.array(self.logic.player, dtype=jnp.int32)
-        self.terminated = jnp.array(0, dtype=jnp.bool_)
-        self.winner = jnp.array(1, dtype=jnp.int32)
 
     @pax.pure
     def step(self, action: chex.Array) -> Tuple["ChessGame", chex.Array]:
@@ -76,10 +63,10 @@ class ChessGame(Enviroment):
         print()
 
     def observation(self) -> chex.Array:
-        return self.logic.current_board
+        return jnp.array(self.logic.current_board, dtype=jnp.int32)
 
     def canonical_observation(self) -> chex.Array:
-        return self.logic.current_board * self.who_play
+        return self.observation() * jnp.array(self.logic.player, dtype=jnp.int32)
 
     def is_terminated(self):
         return (self.logic.check_status() == True and self.logic.in_check_possible_moves() == []) or self.logic.in_check_possible_moves() == []
