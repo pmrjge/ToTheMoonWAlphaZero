@@ -11,33 +11,33 @@ class Board(pax.Module):
     from_pieces: dict
 
     def __init__(self):
-        self.init_board = np.zeros([8,8], dtype=np.int32).astype(str)
+        init_board = np.zeros([8,8], dtype=np.int32).astype(str)
         self.mapping = {"r": 1, "n": 2, "b": 3, "q": 4, "k": 5, "p": 6, "R": 7, "N": 8, "B": 9, "Q": 10, "K": 11, "P": 12, " ": 0}
         self.from_pieces = {v:k for k,v in self.mapping.items()}
-        self.init_board[0,0] = "r"
-        self.init_board[0,1] = "n"
-        self.init_board[0,2] = "b"
-        self.init_board[0,3] = "q"
-        self.init_board[0,4] = "k"
-        self.init_board[0,5] = "b"
-        self.init_board[0,6] = "n"
-        self.init_board[0,7] = "r"
-        self.init_board[1,0:8] = "p"
-        self.init_board[7,0] = "R"
-        self.init_board[7,1] = "N"
-        self.init_board[7,2] = "B"
-        self.init_board[7,3] = "Q"
-        self.init_board[7,4] = "K"
-        self.init_board[7,5] = "B"
-        self.init_board[7,6] = "N"
-        self.init_board[7,7] = "R"
-        self.init_board[6,0:8] = "P"
-        self.init_board[self.init_board == "0"] = " "
+        init_board[0,0] = "r"
+        init_board[0,1] = "n"
+        init_board[0,2] = "b"
+        init_board[0,3] = "q"
+        init_board[0,4] = "k"
+        init_board[0,5] = "b"
+        init_board[0,6] = "n"
+        init_board[0,7] = "r"
+        init_board[1,0:8] = "p"
+        init_board[7,0] = "R"
+        init_board[7,1] = "N"
+        init_board[7,2] = "B"
+        init_board[7,3] = "Q"
+        init_board[7,4] = "K"
+        init_board[7,5] = "B"
+        init_board[7,6] = "N"
+        init_board[7,7] = "R"
+        init_board[6,0:8] = "P"
+        init_board[init_board == "0"] = " "
 
         self.board = jnp.zeros((8,8), dtype=jnp.int32)
         for i in range(8):
             for j in range(8):
-                self.board = self.board.at[i, j].set(self.mapping[self.init_board[i,j]])
+                self.board = self.board.at[i, j].set(self.mapping[init_board[i,j]])
         self.move_count = 0
         self.no_progress_count = 0
         self.repetitions_w = 0
@@ -50,7 +50,7 @@ class Board(pax.Module):
         self.R1_move_count = 0 # white's queenside rook
         self.R2_move_count = 0 # white's kingside rook
         self.K_move_count = 0
-        self.current_board = self.init_board
+        self.current_board = self.board
         self.en_passant_move_copy = None
         self.copy_board = None; self.en_passant_copy = None; self.r1_move_count_copy = None; self.r2_move_count_copy = None; 
         self.k_move_count_copy = None; self.R1_move_count_copy = None; self.R2_move_count_copy = None; self.K_move_count_copy = None
@@ -648,15 +648,16 @@ class Board(pax.Module):
 
     
     def check_status(self):
+        cb = self.transform_board()
         if self.player == 0:
             c_list,_ = self.possible_B_moves(threats=True)
-            king_position = np.where(self.current_board=="K")
+            king_position = np.where(cb=="K")
             i, j = king_position
             if (i,j) in c_list:
                 return True
         elif self.player == 1:
             c_list,_ = self.possible_W_moves(threats=True)
-            king_position = np.where(self.current_board=="k")
+            king_position = np.where(cb=="k")
             i, j = king_position
             if (i,j) in c_list:
                 return True
@@ -814,8 +815,9 @@ class Board(pax.Module):
 
     def encode_action(self, board,initial_pos,final_pos,underpromote=None):
         encoded = np.zeros([8,8,73]).astype(int)
+        board = self.transform_board(board)
         i, j = initial_pos; x, y = final_pos; dx, dy = x-i, y-j
-        piece = self.from_pieces(board.current_board[i,j])
+        piece = board.current_board[i,j]
         if piece in ["R","B","Q","K","P","r","b","q","k","p"] and underpromote in [None,"queen"]: # queen-like moves
             if dx != 0 and dy == 0: # north-south idx 0-13
                 if dx < 0:
@@ -878,7 +880,7 @@ class Board(pax.Module):
                     idx = 72
         encoded[i,j,idx] = 1
         encoded = encoded.reshape(-1); encoded = np.where(encoded==1)[0][0] #index of action
-        return encoded
+        return jnp.array(encoded, dtype=jnp.int32)
 
     def decode_action(self, board,encoded):
         encoded_a = np.zeros([4672]); encoded_a[encoded] = 1; encoded_a = encoded_a.reshape(8,8,73)
