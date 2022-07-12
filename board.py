@@ -65,6 +65,7 @@ class Board(pax.Module):
     
     def move_rules_P(self,current_position):
         i, j = current_position
+        i, j = i.astype(int), j.astype(int)
         next_positions = []
         board_state = self.current_board
         ## to calculate allowed moves for king
@@ -100,6 +101,7 @@ class Board(pax.Module):
 
     def move_rules_p(self,current_position):
         i, j = current_position
+        i, j = i.astype(int), j.astype(int)
         next_positions = []
         board_state = self.current_board
         ## to calculate allowed moves for king
@@ -135,6 +137,7 @@ class Board(pax.Module):
 
     def move_rules_r(self,current_position):
         i, j = current_position
+        i, j = i.astype(int), j.astype(int)
         board_state = self.current_board
         next_positions = []; a=i
         while a!=0:
@@ -173,6 +176,7 @@ class Board(pax.Module):
 
     def move_rules_R(self,current_position):
         i, j = current_position
+        i, j = i.astype(int), j.astype(int)
         board_state = self.current_board
         next_positions = []; a=i
         while a!=0:
@@ -210,6 +214,7 @@ class Board(pax.Module):
 
     def move_rules_n(self,current_position):
         i, j = current_position
+        i, j = i.astype(int), j.astype(int)
         next_positions = []
         board_state = self.current_board
         for a,b in [(i+2,j-1),(i+2,j+1),(i+1,j-2),(i-1,j-2),(i-2,j+1),(i-2,j-1),(i-1,j+2),(i+1,j+2)]:
@@ -220,6 +225,7 @@ class Board(pax.Module):
 
     def move_rules_N(self,current_position):
         i, j = current_position
+        i, j = i.astype(int), j.astype(int)
         next_positions = []
         board_state = self.current_board
         for a,b in [(i+2,j-1),(i+2,j+1),(i+1,j-2),(i-1,j-2),(i-2,j+1),(i-2,j-1),(i-1,j+2),(i+1,j+2)]:
@@ -230,6 +236,7 @@ class Board(pax.Module):
 
     def move_rules_b(self,current_position):
         i, j = current_position
+        i, j = i.astype(int), j.astype(int)
         next_positions = []
         board_state = self.current_board
         a=i;b=j
@@ -268,6 +275,7 @@ class Board(pax.Module):
 
     def move_rules_B(self,current_position):
         i, j = current_position
+        i, j = i.astype(int), j.astype(int)
         next_positions = []
         board_state = self.current_board
         a=i;b=j
@@ -307,6 +315,7 @@ class Board(pax.Module):
         
     def move_rules_q(self,current_position):
         i, j = current_position
+        i, j = i.astype(int), j.astype(int)
         board_state = self.current_board
         next_positions = [];a=i
         #bishop moves
@@ -379,6 +388,7 @@ class Board(pax.Module):
 
     def move_rules_Q(self,current_position):
         i, j = current_position
+        i, j = i.astype(int), j.astype(int)
         board_state = self.current_board
         next_positions = [];a=i
         #bishop moves
@@ -452,19 +462,19 @@ class Board(pax.Module):
     def possible_W_moves(self, threats=False):
         board_state = self.current_board
         rooks = {}; knights = {}; bishops = {}; queens = {}; pawns = {};
-        i,j = np.where(np.array(board_state)==7)
+        i,j = self.find_index(board_state, 7)
         for rook in zip(i,j):
             rooks[tuple(rook)] = self.move_rules_R(rook)
-        i,j = np.where(np.array(board_state)==8)
+        i,j = self.find_index(board_state, 8)
         for knight in zip(i,j):
             knights[tuple(knight)] = self.move_rules_N(knight)
-        i,j = np.where(np.array(board_state)==9)
+        i,j = self.find_index(board_state, 9)
         for bishop in zip(i,j):
             bishops[tuple(bishop)] = self.move_rules_B(bishop)
-        i,j = np.where(np.array(board_state)==10)
+        i,j = self.find_index(board_state, 10)
         for queen in zip(i,j):
             queens[tuple(queen)] = self.move_rules_Q(queen)
-        i,j = np.where(np.array(board_state)==12)
+        i,j = self.find_index(board_state, 12)
         for pawn in zip(i,j):
             if threats==False:
                 pawns[tuple(pawn)],_ = self.move_rules_P(pawn)
@@ -479,8 +489,8 @@ class Board(pax.Module):
 
     def move_rules_k(self):
         cb = self.current_board
-        current_position = np.where(np.array(cb)==5)
-        i, j = current_position; i,j = int(i[0]),int(j[0])
+        current_position = self.find_index(cb, 5)
+        i, j = current_position; i,j = i, j = i[0].astype(int), j[0].astype(int)
         next_positions = []
         c_list, _ = self.possible_W_moves(threats=True)
         for a,b in [(i+1,j),(i-1,j),(i,j+1),(i,j-1),(i+1,j+1),(i-1,j-1),(i+1,j-1),(i-1,j+1)]:
@@ -496,19 +506,19 @@ class Board(pax.Module):
     def possible_B_moves(self,threats=False):
         rooks = {}; knights = {}; bishops = {}; queens = {}; pawns = {};
         board_state = self.current_board
-        i,j = np.where(np.array(board_state)==1)
+        i,j = self.find_index(board_state, 1)
         for rook in zip(i,j):
             rooks[tuple(rook)] = self.move_rules_r(rook)
-        i,j = np.where(np.array(board_state)==2)
+        i,j = self.find_index(board_state, 2)
         for knight in zip(i,j):
             knights[tuple(knight)] = self.move_rules_n(knight)
-        i,j = np.where(np.array(board_state)==3)
+        i,j = self.find_index(board_state, 3)
         for bishop in zip(i,j):
             bishops[tuple(bishop)] = self.move_rules_b(bishop)
-        i,j = np.where(np.array(board_state)==4)
+        i,j = self.find_index(board_state, 4)
         for queen in zip(i,j):
             queens[tuple(queen)] = self.move_rules_q(queen)
-        i,j = np.where(np.array(board_state)==6)
+        i,j = self.find_index(board_state, 6)
         for pawn in zip(i,j):
             if threats==False:
                 pawns[tuple(pawn)],_ = self.move_rules_p(pawn)
@@ -523,8 +533,8 @@ class Board(pax.Module):
     
     def move_rules_K(self):
         cb = self.current_board
-        current_position = np.where(np.array(cb)==5)
-        i, j = current_position; i,j = i[0],j[0]
+        current_position = self.find_index(cb, 11)
+        i, j = current_position; i, j = i[0].astype(int), j[0].astype(int)
         next_positions = []
         c_list, _ = self.possible_B_moves(threats=True)
         for a,b in [(i+1,j),(i-1,j),(i,j+1),(i,j-1),(i+1,j+1),(i-1,j-1),(i+1,j-1),(i-1,j+1)]:
@@ -555,7 +565,7 @@ class Board(pax.Module):
             if piece == 12:
                 if abs(x-i) > 1:
                     self.en_passant = j; self.en_passant_move = self.move_count
-                if abs(y-j) == 1 and cb[i,j] == " ": # En passant capture
+                if abs(y-j) == 1 and cb[i,j] == 0: # En passant capture
                     self.current_board = self.current_board.at[i+1,j].set(0)
                 if i == 0 and self.compute_array(["R","B","N","Q"])[promoted_piece] == 1:
                     self.current_board = self.current_board.at[i, j].set(promoted_piece)
@@ -639,13 +649,13 @@ class Board(pax.Module):
         cb = self.current_board
         if self.player == 0:
             c_list,_ = self.possible_B_moves(threats=True)
-            king_position = np.where(np.array(cb)==11)
+            king_position = self.find_index(cb, 11)
             i, j = king_position
             if (i,j) in c_list:
                 return True
         elif self.player == 1:
             c_list,_ = self.possible_W_moves(threats=True)
-            king_position = np.where(np.array(cb)==5)
+            king_position = self.find_index(cb, 5)
             i, j = king_position
             if (i,j) in c_list:
                 return True
@@ -663,8 +673,8 @@ class Board(pax.Module):
         if self.player == 0:
             possible_moves = []
             _, c_dict = self.possible_W_moves()
-            current_position = np.where(np.array(cb)==11)
-            i, j = current_position; i,j = i[0],j[0]
+            current_position = self.find_index(cb, 11)
+            i, j = current_position; i, j = i[0].astype(int), j[0].astype(int)
             c_dict[11] = {(i,j):self.move_rules_K()}
             for key in c_dict.keys():
                 for initial_pos in c_dict[key].keys():
@@ -681,8 +691,8 @@ class Board(pax.Module):
         if self.player == 1:
             possible_moves = []
             _, c_dict = self.possible_B_moves()
-            current_position = np.where(cb==5)
-            i, j = current_position; i,j = i[0],j[0]
+            current_position = self.find_index(cb, 5)
+            i, j = current_position; i, j = i[0].astype(int), j[0].astype(int)
             c_dict[5] = {(i,j):self.move_rules_k()}
             for key in c_dict.keys():
                 for initial_pos in c_dict[key].keys():
@@ -702,8 +712,8 @@ class Board(pax.Module):
         cb = self.transform_board(self.current_board)
         if self.player == 0:
             _,c_dict = self.possible_W_moves() # all non-king moves except castling
-            current_position = np.where(np.array(cb)==11)
-            i, j = current_position; i,j = i[0],j[0]
+            current_position = i,j = self.find_index(cb, 11)
+            i, j = current_position; i, j = i[0].astype(int), j[0].astype(int)
             c_dict[11] = {(i,j):self.move_rules_K()} # all king moves
             for key in c_dict.keys():
                 for initial_pos in c_dict[key].keys():
@@ -723,7 +733,7 @@ class Board(pax.Module):
             return actss
         if self.player == 1:
             _,c_dict = self.possible_B_moves() # all non-king moves except castling
-            current_position = np.where(np.array(cb)==5)
+            current_position = self.find_index(cb, 5)
             i, j = current_position; i,j = i[0],j[0]
             c_dict[5] = {(i,j):self.move_rules_k()} # all king moves
             for key in c_dict.keys():
@@ -782,7 +792,7 @@ class Board(pax.Module):
                     if encoded[i,j,k] == 1:
                         decoded[i,j] = k + 1
         board = self()
-        board.current_board = self.inverse_board(decoded)
+        board.current_board = decoded
         if encoded[0,0,12] == 1:
             board.player = 1
         if encoded[0,0,13] == 1:
@@ -798,7 +808,7 @@ class Board(pax.Module):
         board.repetitions_b = encoded[0,0,19]
         board.no_progress_count = encoded[0,0,20]
         board.en_passant = encoded[0,0,21]
-        return self.inverse_board(board)
+        return board
 
     def encode_action(self, board,initial_pos,final_pos,underpromote=None):
         encoded = np.zeros([8,8,73]).astype(int)
@@ -869,9 +879,22 @@ class Board(pax.Module):
         encoded = encoded.reshape(-1); encoded = np.where(encoded==1)[0][0] #index of action
         return jnp.array(encoded, dtype=jnp.int32)
 
+    def find_index(self, a, value):
+        indices = jnp.indices(a.shape, dtype=jnp.int32, sparse=False)
+
+        res = jnp.argwhere(a == value, size=64, fill_value=(-1, -1, -1))
+
+        res_x = []
+        res_y = []
+        for i in range(res.shape[0]):
+            res_x.append(res[i][0])
+            res_y.append(res[i][1])
+        
+        return res_x, res_y
+
     def decode_action(self, board,encoded):
         encoded_a = np.zeros([4672]); encoded_a[encoded] = 1; encoded_a = encoded_a.reshape(8,8,73)
-        a,b,c = np.where(encoded_a == 1); # i,j,k = i[0],j[0],k[0]
+        a,b,c = self.find_index(encoded_a, 1) # i,j,k = i[0],j[0],k[0]
         i_pos, f_pos, prom = [], [], []
         for pos in zip(a,b,c):
             i,j,k = pos
